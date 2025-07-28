@@ -1,22 +1,38 @@
-const fs = require('fs');
-const svg2png = require('svg2png');
+import { createWriteStream, existsSync, writeFile } from "fs";
+import { join } from "path";
+import svg2png from "svg2png";
 
-module.exports = function (outputName, d3n) {
-
+export default function (outputName, d3n) {
   if (d3n.options.canvas) {
     const canvas = d3n.options.canvas;
-    console.log('canvas output...', canvas);
-    canvas.pngStream().pipe(fs.createWriteStream('examples/dist/'+outputName+'.png'));
+    console.log("canvas output...", canvas);
+    canvas
+      .pngStream()
+      .pipe(createWriteStream("/dist/" + outputName + ".png"));
     return;
   }
-
-  fs.writeFile('examples/dist/'+outputName+'.html', d3n.html(), function () {
-    console.log('>> Done. Open "examples/dist/'+outputName+'.html" in a web browser');
+  console.log(process.cwd());
+  const writeToPath = join(
+    process.cwd(),
+    "/dist/" + outputName + ".html"
+  );
+  writeFile(writeToPath, d3n.html(), function () {
+    console.log("prem", existsSync(writeToPath));
+    console.log(
+      '>> Done. Open "/dist/' + outputName + '.html" in a web browser'
+    );
   });
 
-  var svgBuffer = new Buffer(d3n.svgString(), 'utf-8');
+  const svgBuffer = Buffer.from(d3n.svgString(), "utf-8");
   svg2png(svgBuffer)
-    .then(buffer => fs.writeFile('examples/dist/'+outputName+'.png', buffer))
-    .catch(e => console.error('ERR:', e))
-    .then(err => console.log('>> Exported: "examples/dist/'+outputName+'.png"'));
-};
+    .then((buffer) => {
+      const p = join(process.cwd(), "/dist/" + outputName + ".png");
+      writeFile(p, buffer, () => {
+        console.log("prem", existsSync(p));
+      });
+    })
+    .catch((e) => console.error("ERR:", e))
+    .then(() =>
+      console.log('>> Exported: "/dist/' + outputName + '.png"')
+    );
+}
